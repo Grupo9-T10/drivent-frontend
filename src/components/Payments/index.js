@@ -34,23 +34,16 @@ export default function Payments() {
     } catch (error) {
       toast('Ocorreu um erro durante o pagamento!');
     }
-
   }
 
   return (
     <>
       <ContainerPayment>
-        <Cards
-          number={card.number}
-          expiry={card.expiry}
-          cvc={card.cvc}
-          name={card.name}
-          focused={card.focus}
-        />
+        <Cards number={card.number} expiry={card.expiry} cvc={card.cvc} name={card.name} focused={card.focus} />
         <ContainerForm>
           <div>
             <input
-              className='form-control'
+              className="form-control"
               type="number"
               name="number"
               placeholder="Card Number"
@@ -88,7 +81,9 @@ export default function Payments() {
           </div>
         </ContainerForm>
       </ContainerPayment>
-      <Button type='submit' onClick={handleSubmit}>FINALIZAR PAGAMENTO</Button>
+      <Button type="submit" onClick={handleSubmit}>
+        FINALIZAR PAGAMENTO
+      </Button>
     </>
   );
 }
