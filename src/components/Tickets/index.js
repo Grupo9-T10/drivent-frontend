@@ -30,11 +30,15 @@ export default function Tickets() {
 
   const handleOptionTicketType = (option) => {
     setIsRemote(option);
+    if(option === true) {
+      setIncludesHotel(false);
+      findTicketTypeId(ticketTypes);
+    }
   };
 
   const handleOptionTicketHotelType = (option) => {
     setIncludesHotel(option);
-    findTicketTypeId(ticketTypes); //depois de os 2 selecionados deve comparar com a array ticketTypes para ver qual é o ticketTypes.id referente
+    findTicketTypeId(ticketTypes); 
   };
 
   const findTicketTypeId = (ticketTypes) => {
@@ -70,7 +74,7 @@ export default function Tickets() {
         options= {ticketTypes}
         onSelect= {handleOptionTicketType} 
       />
-      {(isRemote !== null || isRemote === false) && (
+      {(isRemote === false) && (
         <>
           <TicketHotelType onSelect={handleOptionTicketHotelType} />
           {(includesHotel !== null) && (
@@ -84,6 +88,17 @@ export default function Tickets() {
               </SubmitContainer>
             </>
           )}
+        </>
+      )}
+      {(isRemote === true) && (
+        <>
+          <StyledTypography variant="h6" color='textSecondary'>Fechado! O tatal ficou em <BoldTxt>R$ {total}</BoldTxt>. Agora é só confirmar:</StyledTypography>
+
+          <SubmitContainer>
+            <button onClick= {ticketReservation}>
+          RESERVAR INGRESSO
+            </button>
+          </SubmitContainer>
         </>
       )}    
     </>
@@ -107,17 +122,3 @@ const SubmitContainer = styled.div`
   }
 `;
 
-/*
-<>
-      <StyledTypography variant="h4">Ingresso e pagamento</StyledTypography>
-      <TicketType onSelect= {handleOptionTicketType} />
-      {ticketType === 'Presencial' && <TicketHotelType onSelect={handleOptionTicketHotelType} />}      
-      <StyledTypography variant="h6" color='textSecondary'>Fechado! O tatal ficou em <BoldTxt>R$ {total}</BoldTxt>. Agora é só confirmar:</StyledTypography>
-
-      <SubmitContainer>
-        <button onClick= {ticketReservation}>
-         RESERVAR INGRESSO
-        </button>
-      </SubmitContainer>
-    </>
-*/
