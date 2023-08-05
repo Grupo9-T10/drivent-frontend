@@ -11,25 +11,32 @@ export default function HotelInfo() {
   const [selectedHotelId, setSelectedHotelId] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
-  console.log(userData);
+  console.log(hotels);
 
   useEffect(loadHotels, []);
   
   async function loadHotels() {
     try {
       const response = await getHotels(userData.token, userData.user.id);
-      setHotels(response);
-      //response.forEach((hotel) => {loadRooms(hotel.id);});
-    }catch (error) {
+      const hotelPromises = response.map((hotel) => loadRooms(hotel.id));
+      const roomsResponses = await Promise.all(hotelPromises);
+  
+      const updatedHotels = response.map((hotel, index) => ({
+        ...hotel,
+        rooms: roomsResponses[index].Rooms,
+      }));
+  
+      setHotels(updatedHotels);
+    } catch (error) {
       console.error(error);
-    };
+    }
   };
 
   async function loadRooms(hotelId) {
     try {
       const response = await getHotelsRooms(userData.token, hotelId);
       setRooms(response.Rooms);
-      console.log(response.Rooms);
+      return response;
     }catch (error) {
       console.error(error);
     };
@@ -44,7 +51,7 @@ export default function HotelInfo() {
     <>
       <StyledTypography variant="h4">Escolha de hotel e quarto</StyledTypography>
       <PageContainer>
-        <h1>Primeiro, escolha seu hotel</h1>
+        <h1>Primeiro, escolha seu hotel:</h1>
         <HotelsContainer>
           {hotels.map(hotel =>
             <HotelBox 
@@ -57,10 +64,10 @@ export default function HotelInfo() {
               <h1>{hotel.name}</h1>
 
               <h2>Tipos de acomodação:</h2>
-              <h3>Tipos</h3>
+              <h3></h3>
 
               <h2>Vagas disponíveis:</h2>
-              <h3>Num de vagas</h3>
+              <h3>{hotel.rooms.reduce((total, room) => total + room.capacity, 0)}</h3>
             </HotelBox> 
           )}
         </HotelsContainer>
@@ -169,7 +176,7 @@ display: flex;
 justify-content: space-between;
 padding: 10px;
 margin-right: 10px;
-background-color: ${(props) => (props.isSelected ? '#CECECE' : '#FFFFFF')};
+background-color: ${(props) => (props.isSelected ? '#FFEED2' : '#FFFFFF')};
   h1{
     font-size: 20px;
     font-weight: 700;
