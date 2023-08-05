@@ -1,51 +1,86 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import styled from 'styled-components';
 import Typography from '@material-ui/core/Typography';
 import { BsPerson } from 'react-icons/bs';
+import UserContext from '../../contexts/UserContext';
+import { getHotels, getHotelsRooms } from '../../services/hotelsApi';
+
 export default function HotelInfo() {
+  const { userData } = useContext(UserContext);
+  const [hotels, setHotels] = useState([]);
+  const [selectedHotelId, setSelectedHotelId] = useState(null);
+  const [rooms, setRooms] = useState([]);
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
+  console.log(userData);
+
+  useEffect(loadHotels, []);
+  
+  async function loadHotels() {
+    try {
+      const response = await getHotels(userData.token, userData.user.id);
+      setHotels(response);
+      //response.forEach((hotel) => {loadRooms(hotel.id);});
+    }catch (error) {
+      console.error(error);
+    };
+  };
+
+  async function loadRooms(hotelId) {
+    try {
+      const response = await getHotelsRooms(userData.token, hotelId);
+      setRooms(response.Rooms);
+      console.log(response.Rooms);
+    }catch (error) {
+      console.error(error);
+    };
+  };
+
+  function handleClick(id) {
+    loadRooms(id);
+    setSelectedHotelId(id);
+  };
+
   return (
     <>
       <StyledTypography variant="h4">Escolha de hotel e quarto</StyledTypography>
       <PageContainer>
         <h1>Primeiro, escolha seu hotel</h1>
         <HotelsContainer>
-          <HotelBox>
-            <img src='https://media-cdn.tripadvisor.com/media/photo-s/16/1a/ea/54/hotel-presidente-4s.jpg'/>
-            <h1>Nome do hotel</h1>
+          {hotels.map(hotel =>
+            <HotelBox 
+              key={hotel.id}
+              hotel={hotel}
+              isSelected={selectedHotelId === hotel.id}
+              onClick={() => handleClick(hotel.id)}>
 
-            <h2>Tipos de acomodação:</h2>
-            <h3>Tipos</h3>
+              <img src={hotel.image} />
+              <h1>{hotel.name}</h1>
 
-            <h2>Vagas disponíveis:</h2>
-            <h3>Num de vagas</h3>
-          </HotelBox>
-          <HotelBox>
-            <img src='https://media-cdn.tripadvisor.com/media/photo-s/16/1a/ea/54/hotel-presidente-4s.jpg'/>
-            <h1>Nome do hotel</h1>
+              <h2>Tipos de acomodação:</h2>
+              <h3>Tipos</h3>
 
-            <h2>Tipos de acomodação:</h2>
-            <h3>Tipos</h3>
-
-            <h2>Vagas disponíveis:</h2>
-            <h3>Num de vagas</h3>
-          </HotelBox>
+              <h2>Vagas disponíveis:</h2>
+              <h3>Num de vagas</h3>
+            </HotelBox> 
+          )}
         </HotelsContainer>
-
-        <h1>Ótima pedida! Agora escolha seu quarto:</h1>
-        <RoomsContainer>
-          <RoomBox>
-            <h1>123</h1>
-            <StyledIcon />
-
-          </RoomBox>
-
-          <RoomBox>
-            <h1>123</h1>
-            <StyledIcon />
-
-          </RoomBox>
-        </RoomsContainer>
-
+        {rooms === undefined || selectedHotelId === null ? '' :  
+          <>     
+            <h1>Ótima pedida! Agora escolha seu quarto:</h1>
+            <RoomsContainer>
+              {rooms.map(room => 
+                <RoomBox
+                  key={room.id}
+                  isSelected={selectedRoomId === room.id}
+                  onClick={() => setSelectedRoomId(room.id)}
+                >
+                  <h1>{room.capacity}</h1>
+                  <StyledIcon /> 
+                </RoomBox>            
+              )}
+            </RoomsContainer>
+          </> 
+        }
       </PageContainer>
 
     </>
@@ -77,6 +112,10 @@ const HotelBox = styled.div`
   width: 196px;
   height: 264px;
   padding: 15px;
+  border-radius: 10px;
+  margin-right: 15px;
+  background-color: ${(props) => (props.isSelected ? '#FFEED2' : '#EBEBEB')};
+
 
   img{
     width: 168px;
@@ -130,6 +169,7 @@ display: flex;
 justify-content: space-between;
 padding: 10px;
 margin-right: 10px;
+background-color: ${(props) => (props.isSelected ? '#CECECE' : '#FFFFFF')};
   h1{
     font-size: 20px;
     font-weight: 700;
