@@ -2,8 +2,10 @@ import { useState, useEffect, useContext } from 'react';
 import styled from 'styled-components';
 import Typography from '@material-ui/core/Typography';
 import { BsPerson } from 'react-icons/bs';
+import { BsFillPersonFill } from 'react-icons/bs';
+
 import UserContext from '../../contexts/UserContext';
-import { getHotels, getHotelsRooms } from '../../services/hotelsApi';
+import { checkRoomAvailability, getHotels, getHotelsRooms } from '../../services/hotelsApi';
 
 export default function HotelInfo() {
   const { userData } = useContext(UserContext);
@@ -11,10 +13,10 @@ export default function HotelInfo() {
   const [selectedHotelId, setSelectedHotelId] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
-  console.log(hotels);
+  const [occupiedRooms, setOccupiedRooms] = useState([]);
 
   useEffect(loadHotels, []);
-  
+   
   async function loadHotels() {
     try {
       const response = await getHotels(userData.token, userData.user.id);
@@ -25,7 +27,7 @@ export default function HotelInfo() {
         ...hotel,
         rooms: roomsResponses[index].Rooms,
       }));
-  
+        
       setHotels(updatedHotels);
     } catch (error) {
       console.error(error);
@@ -35,16 +37,103 @@ export default function HotelInfo() {
   async function loadRooms(hotelId) {
     try {
       const response = await getHotelsRooms(userData.token, hotelId);
+      const roomsPromises = response.Rooms.map((room) => checkRoomAvailability(userData.token, room.id));
+
+      const roomsAvailability = await Promise.all(roomsPromises);
+
+      const occupiedRoomIds = roomsAvailability.flatMap((availability) =>
+        availability.map((item) => item.roomId)
+      );
+
       setRooms(response.Rooms);
+      setOccupiedRooms(occupiedRoomIds);
       return response;
-    }catch (error) {
+    } catch (error) {
       console.error(error);
-    };
-  };
+    }
+  }
 
   function handleClick(id) {
     loadRooms(id);
     setSelectedHotelId(id);
+  };
+
+  function handleIcon(room) {
+    if (room.capacity === 1) {
+      return occupiedRooms.includes(room.id) ?
+        <StyledIconOcupado isFull={true} disabled={true}/> :
+        <StyledIcon />;
+    };
+
+    if (room.capacity === 2) {
+      if (occupiedRooms.includes(room.id)) {
+        const occurrences = occupiedRooms.filter((number) => number === room.id).length;
+        return room.capacity === occurrences ?
+          <>
+            <StyledIconOcupado isFull={true} />
+            <StyledIconOcupado isFull={true}/>
+          </> 
+          :
+          <>
+            <StyledIconOcupado isFull={false}/>
+            <StyledIcon />
+          </>;
+      };
+      return <>
+        <StyledIcon />
+        <StyledIcon />
+      </>;
+    };
+
+    if (room.capacity === 3) {
+      if (occupiedRooms.includes(room.id)) {
+        const occurrences = occupiedRooms.filter((number) => number === room.id).length;
+        return room.capacity === occurrences ?
+          <>
+            <StyledIconOcupado isFull={true}/>
+            <StyledIconOcupado isFull={true}/>
+            <StyledIconOcupado isFull={true}/>
+          </> 
+          :
+          (2 === occurrences ?
+            <>
+              <StyledIcon />
+              <StyledIconOcupado isFull={false}/>
+              <StyledIconOcupado isFull={false}/>
+            </>
+            :
+            <>
+              <StyledIcon />
+              <StyledIcon />
+              <StyledIconOcupado isFull={false}/>
+            </>
+          );
+      };
+      return <>
+        <StyledIcon />
+        <StyledIcon />
+        <StyledIcon />
+      </>;
+    }
+  };
+
+  function checkRoomsInfo(rooms) {
+    let info = '';
+    if (rooms.some((room) => room.capacity === 1 )) {
+      info += 'Single, ';
+    }
+    if (rooms.some((room) => room.capacity === 2 )) {
+      info += 'Double, ';
+    }
+    if (rooms.some((room) => room.capacity === 3)) {
+      info += 'Triple';
+    }
+    return info;
+  };
+
+  function checkIfRoomIsfull(room) {
+    const occurrences = occupiedRooms.filter((number) => number === room.id).length;
+    return room.capacity === occurrences ? true : false;
   };
 
   return (
@@ -64,7 +153,7 @@ export default function HotelInfo() {
               <h1>{hotel.name}</h1>
 
               <h2>Tipos de acomodação:</h2>
-              <h3></h3>
+              <h3>{checkRoomsInfo(hotel.rooms)}</h3>
 
               <h2>Vagas disponíveis:</h2>
               <h3>{hotel.rooms.reduce((total, room) => total + room.capacity, 0)}</h3>
@@ -79,10 +168,11 @@ export default function HotelInfo() {
                 <RoomBox
                   key={room.id}
                   isSelected={selectedRoomId === room.id}
+                  isFull={checkIfRoomIsfull(room)}
                   onClick={() => setSelectedRoomId(room.id)}
                 >
                   <h1>{room.capacity}</h1>
-                  <StyledIcon /> 
+                  <h2>{handleIcon(room)}</h2>
                 </RoomBox>            
               )}
             </RoomsContainer>
@@ -176,7 +266,9 @@ display: flex;
 justify-content: space-between;
 padding: 10px;
 margin-right: 10px;
-background-color: ${(props) => (props.isSelected ? '#FFEED2' : '#FFFFFF')};
+background-color: ${(props) => (props. isFull ? '#E9E9E9' : (props.isSelected ? '#FFEED2' : '#FFFFFF'))};
+pointer-events: ${(props) => (props.isFull ? 'none': 'auto')};
+
   h1{
     font-size: 20px;
     font-weight: 700;
@@ -184,11 +276,17 @@ background-color: ${(props) => (props.isSelected ? '#FFEED2' : '#FFFFFF')};
     letter-spacing: 0em;
     text-align: center;
     margin-top: 0;
-    color: #454545;
+    color: ${(props) => (props.isFull ? '#9D9D9D': '#454545')};
   }
 `;
 
 const StyledIcon = styled(BsPerson)`
   font-size: 25px;
-  color: black;
+  color: ${(props) => (props.isSelected ? '#FF4791' : 'black')};
+`;
+
+const StyledIconOcupado = styled(BsFillPersonFill)`
+  font-size: 25px;
+  color: ${(props) => (props.isFull ? '#8C8C8C' : 'black')};
+  pointer-events: none;
 `;

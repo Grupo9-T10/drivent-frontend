@@ -16,5 +16,14 @@ export async function getHotelsRooms(token, hotelId) {
     },
   }, { hotelId });
   return response.data;
+};
+
+export async function checkRoomAvailability(token, roomId) {
+  const response = await api.get(`/booking/${roomId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }, { roomId } );
+  return response.data;
 }
 //
