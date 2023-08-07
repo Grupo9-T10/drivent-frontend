@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Typography } from '@material-ui/core';
+import Button from '../Form/Button';
 //import { toast } from 'react-toastify';
 //import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 
@@ -16,40 +17,47 @@ dayjs.extend(dayjs.extend(CustomParseFormat));
 export default function Tickets() {
   const [isRemote, setIsRemote] = useState(null);
   const [includesHotel, setIncludesHotel] = useState(null);
-  // const [dynamicTicket, setDynamicTicket] = useState(false);
   const [ticketTypeId, setTicketTypeId] = useState(null);
-  
   const [total, setTotal] = useState(0);
 
   const { ticketTypes } = useTicketType();  //chega os 3 tipos 
-  console.log(ticketTypes);
-  console.log(isRemote);
-  console.log(includesHotel);
+  //console.log(ticketTypes);
+  //console.log(isRemote);
+  //console.log(includesHotel);
 
   const { saveTicketLoading, saveTicket } = useSaveTicket();
+
+  useEffect(() => {
+    if( isRemote !== null && includesHotel !== null) {
+      findTicketTypeId();
+      console.log(ticketTypeId);
+    };
+  }, [isRemote, includesHotel, ticketTypes]);
 
   const handleOptionTicketType = (option) => {
     setIsRemote(option);
     if(option === true) {
       setIncludesHotel(false);
       findTicketTypeId(ticketTypes);
-    }
+    };
   };
 
   const handleOptionTicketHotelType = (option) => {
     setIncludesHotel(option);
-    findTicketTypeId(ticketTypes); 
   };
 
-  const findTicketTypeId = (ticketTypes) => {
-    for(let i = 0; i < ticketTypes.length; i++) {
-      if(isRemote === ticketTypes[i].isRemote && includesHotel === ticketTypes[i].includesHotel) {
-        setTicketTypeId(ticketTypes[i].id);
-        setTotal(ticketTypes[i].price);
-        console.log(ticketTypes[i].id);
-      };
-    };
-    return;
+  const findTicketTypeId = () => {
+    const selectedTicket = ticketTypes.find(
+      (ticket) => ticket.isRemote === isRemote && ticket.includesHotel === includesHotel
+    );
+
+    if(selectedTicket) {
+      setTicketTypeId(selectedTicket.id);
+      setTotal(selectedTicket.price);
+    } else {
+      setTicketTypeId(null);
+      setTotal(0);
+    }
   };
 
   const ticketReservation = () => {
@@ -79,12 +87,13 @@ export default function Tickets() {
           <TicketHotelType onSelect={handleOptionTicketHotelType} />
           {(includesHotel !== null) && (
             <>
-              <StyledTypography variant="h6" color='textSecondary'>Fechado! O tatal ficou em <BoldTxt>R$ {total}</BoldTxt>. Agora é só confirmar:</StyledTypography>
+              <StyledTypography variant="h6" color='textSecondary'>Fechado! O total ficou em <BoldTxt>R$ {total}</BoldTxt>. Agora é só confirmar:
+              </StyledTypography>
 
               <SubmitContainer>
-                <button onClick= {ticketReservation}>
+                <Button onClick= {ticketReservation}>
                 RESERVAR INGRESSO
-                </button>
+                </Button>
               </SubmitContainer>
             </>
           )}
@@ -92,12 +101,12 @@ export default function Tickets() {
       )}
       {(isRemote === true) && (
         <>
-          <StyledTypography variant="h6" color='textSecondary'>Fechado! O tatal ficou em <BoldTxt>R$ {total}</BoldTxt>. Agora é só confirmar:</StyledTypography>
+          <StyledTypography variant="h6" color='textSecondary'>Fechado! O total ficou em <BoldTxt>R$ {total}</BoldTxt>. Agora é só confirmar:</StyledTypography>
 
           <SubmitContainer>
-            <button onClick= {ticketReservation}>
+            <Button onClick= {ticketReservation}>
           RESERVAR INGRESSO
-            </button>
+            </Button>
           </SubmitContainer>
         </>
       )}    
@@ -114,11 +123,10 @@ const BoldTxt = styled.span`
 `;
 
 const SubmitContainer = styled.div`
-  margin-top: 40px!important;
+  margin-top: 0px!important;
   width: 100%!important;
 
   > button {
     margin-top: 0 !important;
   }
 `;
-
