@@ -16,7 +16,7 @@ export const ContainerPayments = styled.div`
   h3 {
     margin-left: 12px;
     color: #454545;
-    font-family: Roboto;
+    font-family: 'Roboto', sans-serif;
     font-size: 16px;
     font-style: normal;
     font-weight: 400;
