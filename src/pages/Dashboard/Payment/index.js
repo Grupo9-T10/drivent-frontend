@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import Payments from '../../../components/Payments';
 import Tickets from '../../../components/Tickets';
 import useTicket from '../../../hooks/api/useTicket';
-//import Payments from '../../../components/Payments';
 
 export default function Payment() {
   const [ hasTicket, setHasTicket ] = useState(false);
@@ -15,16 +15,10 @@ export default function Payment() {
     }
   }, ticket);
 
-  //console.log(ticket);
-  //console.log(ticketStatus);
-  //console.log(hasTicket);
-
   return (
     <>
       {hasTicket && ticketStatus === 'RESERVED' ? (
-        <>  
-          <h1>Componente Payments</h1>
-        </> 
+        <Payments />
       ) : (
         <Tickets />
       )}
