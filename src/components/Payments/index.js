@@ -14,6 +14,7 @@ export default function Payments() {
   const [isRemote, setIsRemote] = useState(null);
   const [includesHotel, setIncludesHotel] = useState(null);
   const [ticketStatus, setTicketStatus] = useState(null);
+  const [paid, setPaid] = useState(null);
   const { payment } = usePayment();
   const [card, setCard] = useState({
     number: '',
@@ -35,7 +36,7 @@ export default function Payments() {
 
   useEffect(() => {
     if (ticket) {
-      setIncludesHotel(ticket.TicketType.includesHotel);     
+      setIncludesHotel(ticket.TicketType.includesHotel);
       setIsRemote(ticket.TicketType.isRemote);
       setTicketStatus(ticket.status);
     }
@@ -46,8 +47,8 @@ export default function Payments() {
     const issuer = creditCardType(card.number)[0].type;
     try {
       await payment({ ticketId: ticket.id, cardData: { ...cardData, issuer } });
+      setPaid(true);
       toast('Pagamento realizado com sucesso');
-      window.location.href = '/dashboard/hotel';
     } catch (error) {
       toast('Ocorreu um erro durante o pagamento!');
     }
@@ -58,9 +59,9 @@ export default function Payments() {
       <StyledTypography variant="h4">Ingresso e pagamento</StyledTypography>
       <SectionTitle>Ingresso escolhido</SectionTitle>
       {isRemote ? <TicketCard><p>Online</p><p>R$100,00</p></TicketCard> : includesHotel ? <TicketCard><p>Presencial + Com Hotel</p><p>R$600,00</p></TicketCard> : <TicketCard><p>Presencial + Sem Hotel</p><p>R$250,00</p></TicketCard>}
-      
+
       <SectionTitle>Pagamento</SectionTitle>
-      {ticketStatus === 'RESERVED'?<><ContainerPayment>
+      {ticketStatus === 'RESERVED' && !paid? <><ContainerPayment>
         <Cards number={card.number} expiry={card.expiry} cvc={card.cvc} name={card.name} focused={card.focus} />
         <ContainerForm>
           <div>
@@ -105,8 +106,8 @@ export default function Payments() {
       </ContainerPayment>
       <Button type="submit" onClick={handleSubmit}>
         FINALIZAR PAGAMENTO
-      </Button></> : <Paid/> }
-      
+      </Button></> : <Paid />}
+
     </>
   );
 }
