@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+// import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Typography from '@material-ui/core/Typography';
 import { BsPerson } from 'react-icons/bs';
@@ -10,7 +10,10 @@ export default function HotelInfo() {
         <h1>Primeiro, escolha seu hotel</h1>
         <HotelsContainer>
           <HotelBox>
-            <img src='https://media-cdn.tripadvisor.com/media/photo-s/16/1a/ea/54/hotel-presidente-4s.jpg'/>
+            <img
+              src="https://media-cdn.tripadvisor.com/media/photo-s/16/1a/ea/54/hotel-presidente-4s.jpg"
+              alt="hotel"
+            />
             <h1>Nome do hotel</h1>
 
             <h2>Tipos de acomodação:</h2>
@@ -20,7 +23,10 @@ export default function HotelInfo() {
             <h3>Num de vagas</h3>
           </HotelBox>
           <HotelBox>
-            <img src='https://media-cdn.tripadvisor.com/media/photo-s/16/1a/ea/54/hotel-presidente-4s.jpg'/>
+            <img
+              src="https://media-cdn.tripadvisor.com/media/photo-s/16/1a/ea/54/hotel-presidente-4s.jpg"
+              alt="hotel"
+            />
             <h1>Nome do hotel</h1>
 
             <h2>Tipos de acomodação:</h2>
@@ -36,24 +42,20 @@ export default function HotelInfo() {
           <RoomBox>
             <h1>123</h1>
             <StyledIcon />
-
           </RoomBox>
 
           <RoomBox>
             <h1>123</h1>
             <StyledIcon />
-
           </RoomBox>
         </RoomsContainer>
-
       </PageContainer>
-
     </>
   );
 }
 
 const StyledTypography = styled(Typography)`
-  margin-bottom: 20px!important;
+  margin-bottom: 20px !important;
 `;
 
 const PageContainer = styled.div`
@@ -62,15 +64,14 @@ const PageContainer = styled.div`
     font-weight: 400;
     font-size: 20px;
     line-height: 23px;
-    color: #8E8E8E;
+    color: #8e8e8e;
     margin-top: 30px;
     margin-bottom: 20px;
-
-  };
+  }
 `;
 
 const HotelsContainer = styled.div`
-display: flex;
+  display: flex;
 `;
 const HotelBox = styled.div`
   font-family: Roboto;
@@ -78,13 +79,13 @@ const HotelBox = styled.div`
   height: 264px;
   padding: 15px;
 
-  img{
+  img {
     width: 168px;
     height: 109px;
     border-radius: 5px;
-  };
+  }
 
-  h1{
+  h1 {
     font-size: 20px;
     font-weight: 400;
     line-height: 23px;
@@ -92,45 +93,44 @@ const HotelBox = styled.div`
     text-align: left;
     color: #343434;
     margin-top: 10px;
-  };
+  }
 
-  h2{
+  h2 {
     font-size: 12px;
     font-weight: 700;
     line-height: 14px;
     letter-spacing: 0em;
     text-align: left;
-    color: #3C3C3C;
+    color: #3c3c3c;
     margin-top: 15px;
-  };
+  }
 
-  h3{
+  h3 {
     font-size: 12px;
     font-weight: 400;
     line-height: 14px;
     letter-spacing: 0em;
     text-align: left;
-    color: #3C3C3C;
-;
-  };
+    color: #3c3c3c;
+  }
 `;
 
 const RoomsContainer = styled.div`
-display: flex;
-  `;
+  display: flex;
+`;
 
 const RoomBox = styled.div`
-width: 190px;
-height: 45px;
-border-radius: 10px;
-border: 1px;
-border-color: #CECECE;
-border-style: solid;
-display: flex;
-justify-content: space-between;
-padding: 10px;
-margin-right: 10px;
-  h1{
+  width: 190px;
+  height: 45px;
+  border-radius: 10px;
+  border: 1px;
+  border-color: #cecece;
+  border-style: solid;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  margin-right: 10px;
+  h1 {
     font-size: 20px;
     font-weight: 700;
     line-height: 23px;
