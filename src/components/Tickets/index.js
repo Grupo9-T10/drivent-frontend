@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import CustomParseFormat from 'dayjs/plugin/customParseFormat';
 import useTicketType from '../../hooks/api/useTicket';
 import useSaveTicket from '../../hooks/api/useSaveTicket';
+import useEnrollment from '../../hooks/api/useEnrollment';
 
 dayjs.extend(dayjs.extend(CustomParseFormat));
 
@@ -19,18 +20,38 @@ export default function Tickets() {
   const [includesHotel, setIncludesHotel] = useState(null);
   const [ticketTypeId, setTicketTypeId] = useState(null);
   const [total, setTotal] = useState(0);
+  const [userData, setUserData] = useState(null);
 
   const { ticketTypes } = useTicketType();  //chega os 3 tipos 
   //console.log(ticketTypes);
   //console.log(isRemote);
   //console.log(includesHotel);
+  console.log(userData);
 
   const { saveTicketLoading, saveTicket } = useSaveTicket();
+  const { enrollment } = useEnrollment();
+
+  useEffect(() => {
+    if (enrollment) {
+      setUserData({
+        name: enrollment.name,
+        cpf: enrollment.cpf,
+        birthday: enrollment.birthday,
+        phone: enrollment.phone,
+        cep: enrollment.address.cep,
+        street: enrollment.address.street,
+        city: enrollment.address.city,
+        number: enrollment.address.number,
+        state: enrollment.address.state,
+        neighborhood: enrollment.address.neighborhood,
+        addressDetail: enrollment.address.addressDetail
+      });
+    } 
+  }, [enrollment]);
 
   useEffect(() => {
     if( isRemote !== null && includesHotel !== null) {
       findTicketTypeId();
-      console.log(ticketTypeId);
     };
   }, [isRemote, includesHotel, ticketTypes]);
 
@@ -79,44 +100,65 @@ export default function Tickets() {
 
   return(
     <>
-      <StyledTypography variant="h4">Ingresso e pagamento</StyledTypography>
-      
-      <TicketType 
-        options= {ticketTypes}
-        onSelect= {handleOptionTicketType} 
-      />
-      {(isRemote === false) && (
+      {!userData ? (
         <>
-          <TicketHotelType onSelect={handleOptionTicketHotelType} />
-          {(includesHotel !== null) && (
+          <StyledTypography variant="h4">Ingresso e pagamento</StyledTypography>
+          <StyledAlert>
+            <StyledTypography variant="h6" color='textSecondary'>
+              Você precisa completar sua inscrição antes <br />de prosseguir pra escolha de ingresso
+            </StyledTypography>
+          </StyledAlert>
+        </>
+      ) : (
+        <>
+          <StyledTypography variant="h4">Ingresso e pagamento</StyledTypography>
+      
+          <TicketType 
+            options= {ticketTypes}
+            onSelect= {handleOptionTicketType} 
+          />
+          {(isRemote === false) && (
             <>
-              <StyledTypography variant="h6" color='textSecondary'>Fechado! O total ficou em <BoldTxt>R$ {total}</BoldTxt>. Agora é só confirmar:
-              </StyledTypography>
+              <TicketHotelType onSelect={handleOptionTicketHotelType} />
+              {(includesHotel !== null) && (
+                <>
+                  <StyledTypography variant="h6" color='textSecondary'>Fechado! O total ficou em <BoldTxt>R$ {total}</BoldTxt>. Agora é só confirmar:
+                  </StyledTypography>
+
+                  <SubmitContainer>
+                    <Button onClick= {ticketReservation}>
+                      RESERVAR INGRESSO
+                    </Button>
+                  </SubmitContainer>
+                </>
+              )}
+            </>
+          )}
+          {(isRemote === true) && (
+            <>
+              <StyledTypography variant="h6" color='textSecondary'>Fechado! O total ficou em <BoldTxt>R$ {total}</BoldTxt>. Agora é só confirmar:</StyledTypography>
 
               <SubmitContainer>
                 <Button onClick= {ticketReservation}>
-                RESERVAR INGRESSO
+                  RESERVAR INGRESSO
                 </Button>
               </SubmitContainer>
             </>
-          )}
+          )}    
         </>
       )}
-      {(isRemote === true) && (
-        <>
-          <StyledTypography variant="h6" color='textSecondary'>Fechado! O total ficou em <BoldTxt>R$ {total}</BoldTxt>. Agora é só confirmar:</StyledTypography>
-
-          <SubmitContainer>
-            <Button onClick= {ticketReservation}>
-          RESERVAR INGRESSO
-            </Button>
-          </SubmitContainer>
-        </>
-      )}    
     </>
   );
 };
 
+const StyledAlert = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: 243px;
+`;
 const StyledTypography = styled(Typography)`
   margin-bottom: 20px!important;
 `;
