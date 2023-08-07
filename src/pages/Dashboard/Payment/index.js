@@ -1,22 +1,26 @@
+import React, { useEffect, useState } from 'react';
 import Payments from '../../../components/Payments';
-// import Tickets from '../../../components/Tickets';
-import { useForm } from '../../../hooks/useForm';
-import { ContainerNoPayments } from './style';
+import Tickets from '../../../components/Tickets';
+import useTicket from '../../../hooks/api/useTicket';
 
 export default function Payment() {
-  const { data } = useForm();
+  const [ hasTicket, setHasTicket ] = useState(false);
+  const [ ticketStatus, setTicketStatus ] = useState(null);
+
+  const { ticket } = useTicket();
+  useEffect(() => {
+    if(ticket) {
+      setHasTicket(true);
+      setTicketStatus(ticket.status);
+    }
+  }, ticket);
 
   return (
     <>
-      {data.name ? (
-        <>
-          {/* <Tickets /> */}
-          <Payments />
-        </>
+      {hasTicket && ticketStatus === 'RESERVED' ? (
+        <Payments />
       ) : (
-        <ContainerNoPayments>
-          <h3>Você precisa completar sua inscrição antes de prosseguir pra escolha de ingresso</h3>
-        </ContainerNoPayments>
+        <Tickets />
       )}
     </>
   );
