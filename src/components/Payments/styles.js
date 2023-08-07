@@ -59,6 +59,7 @@ input{
 export const Button = styled.button`
   width: 182px;
   height: 37px;
+  border: transparent;
   border-radius: 4px;
   background: #E0E0E0;
   box-shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.25);
