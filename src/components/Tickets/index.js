@@ -99,7 +99,7 @@ export default function Tickets() {
 
       await saveTicket(ticketData);
       setTicketStatus('RESERVED');
-      window.location.href = '/payment';
+      window.location.href = '/dashboard/payment';
       toast('Informações salvas com sucesso!');
     } catch (err) {
       toast('Não foi possível salvar suas informações!');
