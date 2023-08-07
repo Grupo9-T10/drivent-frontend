@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Typography } from '@material-ui/core';
 import Button from '../Form/Button';
-//import { toast } from 'react-toastify';
-//import { MuiPickersUtilsProvider } from '@material-ui/pickers';
+import { toast } from 'react-toastify';
 
 import TicketType from './TicketType';
 import TicketHotelType from './TicketHotelType';
@@ -21,14 +20,15 @@ export default function Tickets() {
   const [ticketTypeId, setTicketTypeId] = useState(null);
   const [total, setTotal] = useState(0);
   const [userData, setUserData] = useState(null);
+  const [ticketStatus, setTicketStatus] = useState('RESERVED');
 
   const { ticketTypes } = useTicketType();  //chega os 3 tipos 
   //console.log(ticketTypes);
   //console.log(isRemote);
   //console.log(includesHotel);
-  console.log(userData);
+  // console.log(userData);
 
-  const { saveTicketLoading, saveTicket } = useSaveTicket();
+  const { saveTicket } = useSaveTicket();
   const { enrollment } = useEnrollment();
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function Tickets() {
     }
   };
 
-  const ticketReservation = () => {
+  const ticketReservation = async() => {
     if(isRemote === null) {
       alert('Selecione o tipo de ingresso antes de reservar.');
       return;
@@ -95,7 +95,20 @@ export default function Tickets() {
       return;
     }
 
-    window.location.href = '/payments';
+    try {
+      const ticketData = {
+        ticketTypeId: ticketTypeId,
+        enrollmentId: userData.id,
+        status: ticketStatus
+      };
+
+      await saveTicket(ticketData);
+      setTicketStatus('RESERVED');
+      window.location.href = '/payment';
+      toast('Informações salvas com sucesso!');
+    } catch (err) {
+      toast('Não foi possível salvar suas informações!');
+    };    
   };
 
   return(
