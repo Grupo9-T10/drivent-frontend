@@ -8,7 +8,7 @@ import TicketType from './TicketType';
 import TicketHotelType from './TicketHotelType';
 import dayjs from 'dayjs';
 import CustomParseFormat from 'dayjs/plugin/customParseFormat';
-import useTicketType from '../../hooks/api/useTicket';
+import useTicketType from '../../hooks/api/useTicketType';
 import useSaveTicket from '../../hooks/api/useSaveTicket';
 import useEnrollment from '../../hooks/api/useEnrollment';
 
@@ -23,11 +23,6 @@ export default function Tickets() {
   const [ticketStatus, setTicketStatus] = useState('RESERVED');
 
   const { ticketTypes } = useTicketType();  //chega os 3 tipos 
-  //console.log(ticketTypes);
-  //console.log(isRemote);
-  //console.log(includesHotel);
-  // console.log(userData);
-
   const { saveTicket } = useSaveTicket();
   const { enrollment } = useEnrollment();
 

@@ -43,15 +43,3 @@ const TicketHotelTypeContainer = styled.div `
     margin-bottom: 20px;
 `;
 
-/*
-  const [hotelTypes, setHotelTypes] = useState(null);
-
-  //mudar para a chamada real da API
-  useEffect(() => {
-    const hotelTypesFromAPI = [
-      { id: 1, name: 'Com Hotel', price: 250 },
-      { id: 2, name: 'Sem Hotel', price: 100 }
-    ];
-    setHotelTypes(hotelTypesFromAPI);
-  }, []);
-*/

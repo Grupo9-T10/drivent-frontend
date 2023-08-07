@@ -19,3 +19,13 @@ export async function getTicketTypesInformation(token) {
 
   return response.data;
 }
+
+export async function getTicketInformation(token) {
+  const response = await api.get('/tickets', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+}
