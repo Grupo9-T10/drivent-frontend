@@ -4,6 +4,7 @@ import { BsFillCheckCircleFill } from 'react-icons/bs';
 export const ContainerPayments = styled.div`
   display: flex;
   align-items: center;
+  margin-top: 15px;
   h2 {
     margin-left: 12px;
     color: #454545;

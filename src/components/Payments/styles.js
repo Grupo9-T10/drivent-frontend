@@ -1,11 +1,37 @@
 import styled from 'styled-components';
 
+export const TicketCard = styled.div`
+  width: 290px;
+  height: 108px;  
+  border-radius: 20px;
+  background: #FFEED2;
+  display: flex;
+  padding:36px 0 ;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  p{
+    color: #454545;
+    font-size: 16px;
+    :last-child{
+      font-size: 14px;
+      color: #898989;
+    }
+  }
+`;
+
 export const SectionTitle = styled.h1`
   font-size: 20px;
   font-weight: 400;
   line-height: 23px;
   letter-spacing: 0em;
   color:#8E8E8E;
+  :first-of-type{
+    margin-bottom: 17px;
+  }
+  :last-of-type{
+    margin-top: 30px;
+  }
 `;
 
 export const ContainerPayment = styled.div`

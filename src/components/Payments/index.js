@@ -1,15 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Cards from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
-import { Button, ContainerForm, ContainerPayment, SectionTitle } from './styles';
+import { Button, ContainerForm, ContainerPayment, SectionTitle, TicketCard } from './styles';
 import creditCardType from 'credit-card-type';
 import { toast } from 'react-toastify';
 import usePayment from '../../hooks/api/usePayment';
 import useTicket from '../../hooks/api/useTicket';
 import { StyledTypography } from '../Tickets';
+import Paid from '../Paid';
 
 export default function Payments() {
-  let { ticket } = useTicket();
+  const { ticket } = useTicket();
+  const [isRemote, setIsRemote] = useState(null);
+  const [includesHotel, setIncludesHotel] = useState(null);
+  const [ticketStatus, setTicketStatus] = useState(null);
   const { payment } = usePayment();
   const [card, setCard] = useState({
     number: '',
@@ -29,13 +33,18 @@ export default function Payments() {
     setCard((prev) => ({ ...prev, focus: evt.target.name }));
   };
 
+  useEffect(() => {
+    if (ticket) {
+      setIncludesHotel(ticket.TicketType.includesHotel);     
+      setIsRemote(ticket.TicketType.isRemote);
+      setTicketStatus(ticket.status);
+    }
+  }, [ticket]);
+
   async function handleSubmit() {
     const { focus, ...cardData } = card;
-    console.log(card.number)
     const issuer = creditCardType(card.number)[0].type;
-    console.log(issuer)
     try {
-      console.log({ ticketId: ticket.id, cardData: { ...cardData, issuer } })
       await payment({ ticketId: ticket.id, cardData: { ...cardData, issuer } });
       toast('Pagamento realizado com sucesso');
       window.location.href = '/dashboard/hotel';
@@ -47,8 +56,11 @@ export default function Payments() {
   return (
     <>
       <StyledTypography variant="h4">Ingresso e pagamento</StyledTypography>
+      <SectionTitle>Ingresso escolhido</SectionTitle>
+      {isRemote ? <TicketCard><p>Online</p><p>R$100,00</p></TicketCard> : includesHotel ? <TicketCard><p>Presencial + Com Hotel</p><p>R$600,00</p></TicketCard> : <TicketCard><p>Presencial + Sem Hotel</p><p>R$250,00</p></TicketCard>}
+      
       <SectionTitle>Pagamento</SectionTitle>
-      <ContainerPayment>
+      {ticketStatus === 'RESERVED'?<><ContainerPayment>
         <Cards number={card.number} expiry={card.expiry} cvc={card.cvc} name={card.name} focused={card.focus} />
         <ContainerForm>
           <div>
@@ -93,7 +105,8 @@ export default function Payments() {
       </ContainerPayment>
       <Button type="submit" onClick={handleSubmit}>
         FINALIZAR PAGAMENTO
-      </Button>
+      </Button></> : <Paid/> }
+      
     </>
   );
 }
