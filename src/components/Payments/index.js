@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import Cards from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
-import { Button, ContainerForm, ContainerPayment } from './styles';
-import { sendPay } from '../../services/paymentApi';
+import { Button, ContainerForm, ContainerPayment, SectionTitle } from './styles';
 import creditCardType from 'credit-card-type';
 import { toast } from 'react-toastify';
+import usePayment from '../../hooks/api/usePayment';
+import useTicket from '../../hooks/api/useTicket';
+import { StyledTypography } from '../Tickets';
 
 export default function Payments() {
+  let { ticket } = useTicket();
+  const { payment } = usePayment();
   const [card, setCard] = useState({
     number: '',
     expiry: '',
@@ -26,11 +30,15 @@ export default function Payments() {
   };
 
   async function handleSubmit() {
-    const ticketId = 1;
     const { focus, ...cardData } = card;
-    const issuer = creditCardType(card.number).type;
+    console.log(card.number)
+    const issuer = creditCardType(card.number)[0].type;
+    console.log(issuer)
     try {
-      await sendPay({ ticketId, cardData: { ...cardData, issuer } });
+      console.log({ ticketId: ticket.id, cardData: { ...cardData, issuer } })
+      await payment({ ticketId: ticket.id, cardData: { ...cardData, issuer } });
+      toast('Pagamento realizado com sucesso');
+      window.location.href = '/dashboard/hotel';
     } catch (error) {
       toast('Ocorreu um erro durante o pagamento!');
     }
@@ -38,6 +46,8 @@ export default function Payments() {
 
   return (
     <>
+      <StyledTypography variant="h4">Ingresso e pagamento</StyledTypography>
+      <SectionTitle>Pagamento</SectionTitle>
       <ContainerPayment>
         <Cards number={card.number} expiry={card.expiry} cvc={card.cvc} name={card.name} focused={card.focus} />
         <ContainerForm>
