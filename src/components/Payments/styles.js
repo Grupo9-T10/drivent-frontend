@@ -1,5 +1,13 @@
 import styled from 'styled-components';
 
+export const SectionTitle = styled.h1`
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 23px;
+  letter-spacing: 0em;
+  color:#8E8E8E;
+`;
+
 export const ContainerPayment = styled.div`
 display: flex;
 width: 706px;
