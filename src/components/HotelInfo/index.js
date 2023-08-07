@@ -6,6 +6,7 @@ import { BsFillPersonFill } from 'react-icons/bs';
 
 import UserContext from '../../contexts/UserContext';
 import { checkRoomAvailability, getHotels, getHotelsRooms } from '../../services/hotelsApi';
+import { getTicketInformation } from '../../services/ticketApi';
 
 export default function HotelInfo() {
   const { userData } = useContext(UserContext);
@@ -15,10 +16,14 @@ export default function HotelInfo() {
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [occupiedRooms, setOccupiedRooms] = useState([]);
 
+  const [ticketIncludesHotel, setTicketIncludesHotel] = useState(false);
+  const [ticketIsPaid, setTicketIsPaid] = useState(false);
+
   useEffect(loadHotels, []);
-   
+
   async function loadHotels() {
     try {
+      loadTicket();
       const response = await getHotels(userData.token, userData.user.id);
       const hotelPromises = response.map((hotel) => loadRooms(hotel.id));
       const roomsResponses = await Promise.all(hotelPromises);
@@ -31,12 +36,13 @@ export default function HotelInfo() {
       setHotels(updatedHotels);
     } catch (error) {
       console.error(error);
-    }
-  };
+    };
+  }
 
   async function loadRooms(hotelId) {
     try {
       const response = await getHotelsRooms(userData.token, hotelId);
+      console.log(response);
       const roomsPromises = response.Rooms.map((room) => checkRoomAvailability(userData.token, room.id));
 
       const roomsAvailability = await Promise.all(roomsPromises);
@@ -51,6 +57,22 @@ export default function HotelInfo() {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  async function loadTicket() {
+    try {
+      const ticketInfo = await getTicketInformation(userData.token);
+      console.log(ticketInfo);
+      if (ticketInfo.TicketType.isRemote === false && ticketInfo.TicketType.includesHotel === true) {
+        setTicketIncludesHotel(true);
+      };
+
+      if (ticketInfo.status === 'PAID' || ticketInfo) {
+        setTicketIsPaid(true);
+      };
+    }catch (error) {
+      console.error(error);
+    };
   }
 
   function handleClick(id) {
@@ -140,68 +162,89 @@ export default function HotelInfo() {
     <>
       <StyledTypography variant="h4">Escolha de hotel e quarto</StyledTypography>
       <PageContainer>
-        <h1>Primeiro, escolha seu hotel:</h1>
-        <HotelsContainer>
-          {hotels.map(hotel =>
-            <HotelBox 
-              key={hotel.id}
-              hotel={hotel}
-              isSelected={selectedHotelId === hotel.id}
-              onClick={() => handleClick(hotel.id)}>
+        {!ticketIsPaid ? 
+          <p>Você precisa ter confirmado pagamento antes de fazer a escolha de hospedagem</p>
+          :
+          !ticketIncludesHotel ?
+            <p>Sua modalidade de ingresso não inclui hospedagem. Prossiga para a escolha de atividades</p>
+            :
+            <>
+              <h1>Primeiro, escolha seu hotel:</h1>
+              <HotelsContainer>
+                {hotels.map(hotel =>
+                  <HotelBox 
+                    key={hotel.id}
+                    hotel={hotel}
+                    isSelected={selectedHotelId === hotel.id}
+                    onClick={() => handleClick(hotel.id)}>
 
-              <img src={hotel.image} />
-              <h1>{hotel.name}</h1>
+                    <img src={hotel.image} />
+                    <h1>{hotel.name}</h1>
 
-              <h2>Tipos de acomodação:</h2>
-              <h3>{checkRoomsInfo(hotel.rooms)}</h3>
+                    <h2>Tipos de acomodação:</h2>
+                    <h3>{checkRoomsInfo(hotel.rooms)}</h3>
 
-              <h2>Vagas disponíveis:</h2>
-              <h3>{hotel.rooms.reduce((total, room) => total + room.capacity, 0)}</h3>
-            </HotelBox> 
-          )}
-        </HotelsContainer>
-        {rooms === undefined || selectedHotelId === null ? '' :  
-          <>     
-            <h1>Ótima pedida! Agora escolha seu quarto:</h1>
-            <RoomsContainer>
-              {rooms.map(room => 
-                <RoomBox
-                  key={room.id}
-                  isSelected={selectedRoomId === room.id}
-                  isFull={checkIfRoomIsfull(room)}
-                  onClick={() => setSelectedRoomId(room.id)}
-                >
-                  <h1>{room.capacity}</h1>
-                  <h2>{handleIcon(room)}</h2>
-                </RoomBox>            
-              )}
-            </RoomsContainer>
-          </> 
+                    <h2>Vagas disponíveis:</h2>
+                    <h3>{hotel.rooms.reduce((total, room) => total + room.capacity, 0)}</h3>
+                  </HotelBox> 
+                )}
+              </HotelsContainer>
+              {rooms === undefined || selectedHotelId === null ? '' :  
+                <>     
+                  <h1>Ótima pedida! Agora escolha seu quarto:</h1>
+                  <RoomsContainer>
+                    {rooms.map(room => 
+                      <RoomBox
+                        key={room.id}
+                        isSelected={selectedRoomId === room.id}
+                        isFull={checkIfRoomIsfull(room)}
+                        onClick={() => setSelectedRoomId(room.id)}
+                      >
+                        <h1>{room.capacity}</h1>
+                        <h2>{handleIcon(room)}</h2>
+                      </RoomBox>            
+                    )}
+                  </RoomsContainer>
+                </> 
+              } 
+            </>
         }
       </PageContainer>
+
     </>
   );
 }
 
 const StyledTypography = styled(Typography)`
-  margin-bottom: 20px !important;
+  margin-bottom: 20px!important;
 `;
 
 const PageContainer = styled.div`
   font-family: Roboto;
+  p {
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 23px;
+    letter-spacing: 0em;
+    text-align: center;
+    color: #8E8E8E;
+    margin-top: 25%;
+  }
   h1 {
     font-weight: 400;
     font-size: 20px;
     line-height: 23px;
-    color: #8e8e8e;
+    color: #8E8E8E;
     margin-top: 30px;
     margin-bottom: 20px;
-  }
+
+  };
 `;
 
 const HotelsContainer = styled.div`
-  display: flex;
+display: flex;
 `;
+
 const HotelBox = styled.div`
   font-family: Roboto;
   width: 196px;
@@ -212,13 +255,13 @@ const HotelBox = styled.div`
   background-color: ${(props) => (props.isSelected ? '#FFEED2' : '#EBEBEB')};
 
 
-  img {
+  img{
     width: 168px;
     height: 109px;
     border-radius: 5px;
-  }
+  };
 
-  h1 {
+  h1{
     font-size: 20px;
     font-weight: 400;
     line-height: 23px;
@@ -226,30 +269,31 @@ const HotelBox = styled.div`
     text-align: left;
     color: #343434;
     margin-top: 10px;
-  }
+  };
 
-  h2 {
+  h2{
     font-size: 12px;
     font-weight: 700;
     line-height: 14px;
     letter-spacing: 0em;
     text-align: left;
-    color: #3c3c3c;
+    color: #3C3C3C;
     margin-top: 15px;
-  }
+  };
 
-  h3 {
+  h3{
     font-size: 12px;
     font-weight: 400;
     line-height: 14px;
     letter-spacing: 0em;
     text-align: left;
-    color: #3c3c3c;
-  }
+    color: #3C3C3C;
+;
+  };
 `;
 
 const RoomsContainer = styled.div`
-  display: flex;
+display: flex;
 `;
 
 const RoomBox = styled.div`
