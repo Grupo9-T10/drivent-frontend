@@ -39,7 +39,10 @@ export default function Tickets() {
     if(option === true) {
       setIncludesHotel(false);
       findTicketTypeId(ticketTypes);
-    };
+    } else {
+      setIncludesHotel(null);
+      findTicketTypeId();
+    }
   };
 
   const handleOptionTicketHotelType = (option) => {
