@@ -3,10 +3,11 @@ import styled from 'styled-components';
 import Typography from '@material-ui/core/Typography';
 import { BsPerson } from 'react-icons/bs';
 import { BsFillPersonFill } from 'react-icons/bs';
-
 import UserContext from '../../contexts/UserContext';
 import { checkRoomAvailability, getHotels, getHotelsRooms } from '../../services/hotelsApi';
 import { getTicketInformation } from '../../services/ticketApi';
+import { getBookingByUserId, postBooking } from '../../services/bookingApi';
+import { toast } from 'react-toastify';
 
 export default function HotelInfo() {
   const { userData } = useContext(UserContext);
@@ -18,12 +19,14 @@ export default function HotelInfo() {
 
   const [ticketIncludesHotel, setTicketIncludesHotel] = useState(false);
   const [ticketIsPaid, setTicketIsPaid] = useState(false);
+  const [booking, setBooking] = useState(null);
 
   useEffect(loadHotels, []);
 
   async function loadHotels() {
     try {
       loadTicket();
+      loadBooking();
       const response = await getHotels(userData.token, userData.user.id);
       const hotelPromises = response.map((hotel) => loadRooms(hotel.id));
       const roomsResponses = await Promise.all(hotelPromises);
@@ -42,7 +45,6 @@ export default function HotelInfo() {
   async function loadRooms(hotelId) {
     try {
       const response = await getHotelsRooms(userData.token, hotelId);
-      console.log(response);
       const roomsPromises = response.Rooms.map((room) => checkRoomAvailability(userData.token, room.id));
 
       const roomsAvailability = await Promise.all(roomsPromises);
@@ -62,18 +64,42 @@ export default function HotelInfo() {
   async function loadTicket() {
     try {
       const ticketInfo = await getTicketInformation(userData.token);
-      console.log(ticketInfo);
-      if (ticketInfo.TicketType.isRemote === false && ticketInfo.TicketType.includesHotel === true) {
-        setTicketIncludesHotel(true);
-      };
-
       if (ticketInfo.status === 'PAID' || ticketInfo) {
         setTicketIsPaid(true);
+      };
+      if (ticketInfo.TicketType.isRemote === false && ticketInfo.TicketType.includesHotel === true) {
+        setTicketIncludesHotel(true);
       };
     }catch (error) {
       console.error(error);
     };
-  }
+  };
+
+  async function loadBooking() {
+    try {
+      const bookingRoom = await getBookingByUserId(userData.token);
+      console.log(bookingRoom);    
+
+      if(bookingRoom) {
+        const bookingHotel = await loadRooms(bookingRoom.Room.hotelId);
+
+        const occurrences = (occupiedRooms.filter((number) => number === bookingRoom.Room.id).length);
+
+        const bookingInfo = {
+          hotelImage: bookingHotel.image,
+          hotelName: bookingHotel.name,
+          room: bookingRoom.Room.name,
+          roomType: bookingRoom.Room.capacity === 1 ? 'Single' : (bookingRoom.Room.capacity === 2 ? 'Double' : 'Triple'),
+          ocupation: occurrences === 0 ? 'Você' : `Você e mais ${occurrences}`
+        };
+        
+        setBooking(bookingInfo);
+      }      
+    }catch (error) {
+      setBooking(false);
+      return '';
+    };
+  };
 
   function handleClick(id) {
     loadRooms(id);
@@ -84,7 +110,10 @@ export default function HotelInfo() {
     if (room.capacity === 1) {
       return occupiedRooms.includes(room.id) ?
         <StyledIconOcupado isFull={true} disabled={true}/> :
-        <StyledIcon />;
+        (selectedRoomId === room.id ? 
+          <StyledIconSelected/> :
+          <StyledIcon />
+        );
     };
 
     if (room.capacity === 2) {
@@ -97,13 +126,19 @@ export default function HotelInfo() {
           </> 
           :
           <>
+            {selectedRoomId === room.id ? 
+              <StyledIconSelected/> :
+              <StyledIcon />
+            }
             <StyledIconOcupado isFull={false}/>
-            <StyledIcon />
           </>;
       };
       return <>
         <StyledIcon />
-        <StyledIcon />
+        {selectedRoomId === room.id ? 
+          <StyledIconSelected/> :
+          <StyledIcon />
+        }
       </>;
     };
 
@@ -119,24 +154,43 @@ export default function HotelInfo() {
           :
           (2 === occurrences ?
             <>
-              <StyledIcon />
+              {selectedRoomId === room.id ? 
+                <StyledIconSelected/> :
+                <StyledIcon />
+              }
               <StyledIconOcupado isFull={false}/>
               <StyledIconOcupado isFull={false}/>
             </>
             :
             <>
               <StyledIcon />
-              <StyledIcon />
+              {selectedRoomId === room.id ? 
+                <StyledIconSelected/> :
+                <StyledIcon />
+              }
               <StyledIconOcupado isFull={false}/>
             </>
           );
       };
       return <>
-        <StyledIcon />
+        {selectedRoomId === room.id ? 
+          <StyledIconSelected/> :
+          <StyledIcon />
+        }
         <StyledIcon />
         <StyledIcon />
       </>;
     }
+  };
+
+  async function handleSubmit() {
+    try {
+      await postBooking({ roomId: selectedRoomId }, userData.token);
+      toast('Reserva feita com sucesso!');
+      loadBooking();
+    }catch (error) {
+      toast('Ocorreu um erro durante o pagamento');
+    };
   };
 
   function checkRoomsInfo(rooms) {
@@ -168,46 +222,63 @@ export default function HotelInfo() {
           !ticketIncludesHotel ?
             <p>Sua modalidade de ingresso não inclui hospedagem. Prossiga para a escolha de atividades</p>
             :
-            <>
-              <h1>Primeiro, escolha seu hotel:</h1>
-              <HotelsContainer>
-                {hotels.map(hotel =>
-                  <HotelBox 
-                    key={hotel.id}
-                    hotel={hotel}
-                    isSelected={selectedHotelId === hotel.id}
-                    onClick={() => handleClick(hotel.id)}>
+            booking ? 
+              <>
+                <h1>Você já escolheu seu quarto:</h1>
+                <HotelBox booking={booking}>
+                  <img src={booking.hotelImage} alt={booking.hotelName} />
+                  <h1>{booking.hotelName}</h1>
+            
+                  <h2>Quarto reservado:</h2>
+                  <h3>{booking.room} ({booking.roomType})</h3>
+            
+                  <h2>Pessoas no seu quarto:</h2>
+                  <h3>{booking.ocupation}</h3>
+                </HotelBox>
+              </> 
+              :
+              <>
+                <h1>Primeiro, escolha seu hotel:</h1>
+                <HotelsContainer>
+                  {hotels.map(hotel =>
+                    <HotelBox 
+                      key={hotel.id}
+                      hotel={hotel}
+                      isSelected={selectedHotelId === hotel.id}
+                      onClick={() => handleClick(hotel.id)}>
 
-                    <img src={hotel.image} />
-                    <h1>{hotel.name}</h1>
+                      <img src={hotel.image} />
+                      <h1>{hotel.name}</h1>
 
-                    <h2>Tipos de acomodação:</h2>
-                    <h3>{checkRoomsInfo(hotel.rooms)}</h3>
+                      <h2>Tipos de acomodação:</h2>
+                      <h3>{checkRoomsInfo(hotel.rooms)}</h3>
 
-                    <h2>Vagas disponíveis:</h2>
-                    <h3>{hotel.rooms.reduce((total, room) => total + room.capacity, 0)}</h3>
-                  </HotelBox> 
-                )}
-              </HotelsContainer>
-              {rooms === undefined || selectedHotelId === null ? '' :  
-                <>     
-                  <h1>Ótima pedida! Agora escolha seu quarto:</h1>
-                  <RoomsContainer>
-                    {rooms.map(room => 
-                      <RoomBox
-                        key={room.id}
-                        isSelected={selectedRoomId === room.id}
-                        isFull={checkIfRoomIsfull(room)}
-                        onClick={() => setSelectedRoomId(room.id)}
-                      >
-                        <h1>{room.capacity}</h1>
-                        <h2>{handleIcon(room)}</h2>
-                      </RoomBox>            
-                    )}
-                  </RoomsContainer>
-                </> 
-              } 
-            </>
+                      <h2>Vagas disponíveis:</h2>
+                      <h3>{hotel.rooms.reduce((total, room) => total + room.capacity, 0)}</h3>
+                    </HotelBox> 
+                  )}
+                </HotelsContainer>
+                {rooms === undefined || selectedHotelId === null ? '' :  
+                  <>     
+                    <h1>Ótima pedida! Agora escolha seu quarto:</h1>
+                    <RoomsContainer>
+                      {rooms.map(room => 
+                        <RoomBox
+                          key={room.id}
+                          isSelected={selectedRoomId === room.id}
+                          isFull={checkIfRoomIsfull(room)}
+                          onClick={() => setSelectedRoomId(room.id)}
+                        >
+                          <h1>{room.capacity}</h1>
+                          <h2>{handleIcon(room)}</h2>
+                        </RoomBox>            
+                      )}
+                    </RoomsContainer>
+                    
+                  </> 
+                }
+                <button disabled={!selectedRoomId} onClick={handleSubmit}>RESERVAR QUARTO</button> 
+              </>
         }
       </PageContainer>
 
@@ -237,8 +308,18 @@ const PageContainer = styled.div`
     color: #8E8E8E;
     margin-top: 30px;
     margin-bottom: 20px;
-
   };
+  button {
+    width: 182px;
+    height: 37px;
+    border: transparent;
+    border-radius: 4px;
+    background: #E0E0E0;
+    box-shadow: 0px 2px 10px 0px rgba(0, 0, 0, 0.25);
+    margin-top: 37px;
+    display: ${(props) => (props.disabled ? 'none' : 'inline')};
+    pointer-events: ${(props) => (props.disabled ? 'none' : 'auto')} ;
+  }
 `;
 
 const HotelsContainer = styled.div`
@@ -252,9 +333,7 @@ const HotelBox = styled.div`
   padding: 15px;
   border-radius: 10px;
   margin-right: 15px;
-  background-color: ${(props) => (props.isSelected ? '#FFEED2' : '#EBEBEB')};
-
-
+  background-color: ${(props) => (props.isSelected || props.booking? '#FFEED2' : '#EBEBEB')};
   img{
     width: 168px;
     height: 109px;
@@ -330,4 +409,9 @@ const StyledIconOcupado = styled(BsFillPersonFill)`
   font-size: 25px;
   color: ${(props) => (props.isFull ? '#8C8C8C' : 'black')};
   pointer-events: none;
+`;
+
+const StyledIconSelected= styled(BsFillPersonFill)`
+  font-size: 25px;
+  color: #FF4791;
 `;
