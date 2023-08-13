@@ -35,8 +35,9 @@ export default function HotelInfo() {
       const updatedHotels = response.map((hotel, index) => ({
         ...hotel,
         rooms: roomsResponses[index].Rooms,
+        occupiedRooms: roomsResponses[index].occupiedRoomIds
       }));
-      
+        
       setHotels(updatedHotels);
     } catch (error) {
       toast('Erro ao carregar os hotéis');
@@ -53,9 +54,14 @@ export default function HotelInfo() {
       const occupiedRoomIds = roomsAvailability.flatMap((availability) =>
         availability.map((item) => item.roomId)
       );
+
+      const updatedResponse = {
+        ...response,
+        occupiedRoomIds: occupiedRoomIds
+      };
       setRooms(response.Rooms);
       setOccupiedRooms(occupiedRoomIds);
-      return response;
+      return updatedResponse;
     } catch (error) {
       toast('Erro ao carregar os quartos');
     }
@@ -82,7 +88,9 @@ export default function HotelInfo() {
       if(bookingRoom) {
         const bookingHotel = await loadRooms(bookingRoom.Room.hotelId);
 
-        const occurrences = (occupiedRooms.filter((number) => number === bookingRoom.Room.id).length);
+        const occupiedRoomIds = bookingHotel.occupiedRoomIds.filter(id => id === bookingRoom.Room.id);
+
+        const occurrences = occupiedRoomIds.length - 1;        
 
         const bookingInfo = {
           id: bookingRoom.id,
@@ -267,7 +275,7 @@ export default function HotelInfo() {
                       <h3>{checkRoomsInfo(hotel.rooms)}</h3>
 
                       <h2>Vagas disponíveis:</h2>
-                      <h3>{hotel.rooms.reduce((total, room) => total + room.capacity, 0)}</h3>
+                      <h3>{(hotel.rooms.reduce((total, room) => total + room.capacity, 0)) - hotel.occupiedRooms.length}</h3>
                     </HotelBox> 
                   )}
                 </HotelsContainer>
