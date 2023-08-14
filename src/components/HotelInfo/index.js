@@ -6,7 +6,7 @@ import { BsFillPersonFill } from 'react-icons/bs';
 import UserContext from '../../contexts/UserContext';
 import { checkRoomAvailability, getHotels, getHotelsRooms } from '../../services/hotelsApi';
 import { getTicketInformation } from '../../services/ticketApi';
-import { getBookingByUserId, postBooking } from '../../services/bookingApi';
+import { changeBooking, getBookingByUserId, postBooking } from '../../services/bookingApi';
 import { toast } from 'react-toastify';
 
 export default function HotelInfo() {
@@ -20,6 +20,7 @@ export default function HotelInfo() {
   const [ticketIncludesHotel, setTicketIncludesHotel] = useState(false);
   const [ticketIsPaid, setTicketIsPaid] = useState(false);
   const [booking, setBooking] = useState(null);
+  const [newBooking, setNewBooking] = useState(false);
 
   useEffect(loadHotels, []);
 
@@ -34,11 +35,12 @@ export default function HotelInfo() {
       const updatedHotels = response.map((hotel, index) => ({
         ...hotel,
         rooms: roomsResponses[index].Rooms,
+        occupiedRooms: roomsResponses[index].occupiedRoomIds
       }));
         
       setHotels(updatedHotels);
     } catch (error) {
-      console.error(error);
+      toast('Erro ao carregar os hotéis');
     };
   }
 
@@ -53,11 +55,15 @@ export default function HotelInfo() {
         availability.map((item) => item.roomId)
       );
 
+      const updatedResponse = {
+        ...response,
+        occupiedRoomIds: occupiedRoomIds
+      };
       setRooms(response.Rooms);
       setOccupiedRooms(occupiedRoomIds);
-      return response;
+      return updatedResponse;
     } catch (error) {
-      console.error(error);
+      toast('Erro ao carregar os quartos');
     }
   };
 
@@ -71,21 +77,23 @@ export default function HotelInfo() {
         setTicketIncludesHotel(true);
       };
     }catch (error) {
-      console.error(error);
+      toast('Erro ao carregar as informações do ticket');
     };
   };
 
   async function loadBooking() {
     try {
       const bookingRoom = await getBookingByUserId(userData.token);
-      console.log(bookingRoom);    
 
       if(bookingRoom) {
         const bookingHotel = await loadRooms(bookingRoom.Room.hotelId);
 
-        const occurrences = (occupiedRooms.filter((number) => number === bookingRoom.Room.id).length);
+        const occupiedRoomIds = bookingHotel.occupiedRoomIds.filter(id => id === bookingRoom.Room.id);
+
+        const occurrences = occupiedRoomIds.length - 1;        
 
         const bookingInfo = {
+          id: bookingRoom.id,
           hotelImage: bookingHotel.image,
           hotelName: bookingHotel.name,
           room: bookingRoom.Room.name,
@@ -98,6 +106,22 @@ export default function HotelInfo() {
     }catch (error) {
       setBooking(false);
       return '';
+    };
+  };
+
+  async function handleSubmit() {
+    try {
+      if (booking) {
+        await changeBooking({ roomId: selectedRoomId }, userData.token, booking.id);
+      }
+      else {
+        await postBooking({ roomId: selectedRoomId }, userData.token);
+      }
+      setNewBooking(false);
+      toast('Reserva feita com sucesso!');
+      loadBooking();
+    }catch (error) {
+      toast('Ocorreu um erro durante a reserva');
     };
   };
 
@@ -183,28 +207,24 @@ export default function HotelInfo() {
     }
   };
 
-  async function handleSubmit() {
-    try {
-      await postBooking({ roomId: selectedRoomId }, userData.token);
-      toast('Reserva feita com sucesso!');
-      loadBooking();
-    }catch (error) {
-      toast('Ocorreu um erro durante o pagamento');
-    };
-  };
-
   function checkRoomsInfo(rooms) {
-    let info = '';
+    let info = [];
     if (rooms.some((room) => room.capacity === 1 )) {
-      info += 'Single, ';
+      info.push(1);
     }
     if (rooms.some((room) => room.capacity === 2 )) {
-      info += 'Double, ';
+      info.push(2);
     }
     if (rooms.some((room) => room.capacity === 3)) {
-      info += 'Triple';
+      info.push(3);
     }
-    return info;
+    if (info.includes(1) && info.includes(2) && info.includes(3)) return 'Single, Double e Triple';
+    if (info.includes(1) && info.includes(2)) return 'Single e Double';
+    if (info.includes(1) && info.includes(3)) return 'Single e Triple';
+    if (info.includes(2) && info.includes(3)) return 'Double e Triple';
+    if (info.includes(1)) return 'Single';
+    if (info.includes(2)) return 'Double';
+    if (info.includes(3)) return 'Triple';
   };
 
   function checkIfRoomIsfull(room) {
@@ -222,7 +242,7 @@ export default function HotelInfo() {
           !ticketIncludesHotel ?
             <p>Sua modalidade de ingresso não inclui hospedagem. Prossiga para a escolha de atividades</p>
             :
-            booking ? 
+            booking && !newBooking ? 
               <>
                 <h1>Você já escolheu seu quarto:</h1>
                 <HotelBox booking={booking}>
@@ -235,6 +255,7 @@ export default function HotelInfo() {
                   <h2>Pessoas no seu quarto:</h2>
                   <h3>{booking.ocupation}</h3>
                 </HotelBox>
+                <button onClick={() => setNewBooking(true)}>TROCAR DE QUARTO</button> 
               </> 
               :
               <>
@@ -247,14 +268,14 @@ export default function HotelInfo() {
                       isSelected={selectedHotelId === hotel.id}
                       onClick={() => handleClick(hotel.id)}>
 
-                      <img src={hotel.image} />
+                      <img src={hotel.image} alt={hotel.name}/>
                       <h1>{hotel.name}</h1>
 
                       <h2>Tipos de acomodação:</h2>
                       <h3>{checkRoomsInfo(hotel.rooms)}</h3>
 
                       <h2>Vagas disponíveis:</h2>
-                      <h3>{hotel.rooms.reduce((total, room) => total + room.capacity, 0)}</h3>
+                      <h3>{(hotel.rooms.reduce((total, room) => total + room.capacity, 0)) - hotel.occupiedRooms.length}</h3>
                     </HotelBox> 
                   )}
                 </HotelsContainer>
@@ -386,7 +407,7 @@ display: flex;
 justify-content: space-between;
 padding: 10px;
 margin-right: 10px;
-background-color: ${(props) => (props. isFull ? '#E9E9E9' : (props.isSelected ? '#FFEED2' : '#FFFFFF'))};
+background-color: ${(props) => (props.isFull ? '#E9E9E9' : (props.isSelected ? '#FFEED2' : '#FFFFFF'))};
 pointer-events: ${(props) => (props.isFull ? 'none': 'auto')};
 
   h1{
