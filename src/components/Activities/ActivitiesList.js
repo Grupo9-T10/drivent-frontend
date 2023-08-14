@@ -1,7 +1,57 @@
 import styled from 'styled-components';
 import ActivitieOption from './ActivitieOption.js';
+import { useEffect, useState } from 'react';
+import api from '../../services/api.js';
+export default function ActivitiesList({ activities, userId, token }) {
+  const [localPrincipal, setLocalPrincipal] = useState([]);
+  const [localLateral, setLocalLateral] = useState([]);
+  const [workshopLocal, setWorkshopLocal] = useState([]);
+  const [userActivities, setUserActivities] = useState([]);
+  useEffect(() => {
+    organizeActivitiesLocal();
+    getUsersActivities();
+  }, [activities]);
 
-export default function ActivitiesList() {
+  function organizeActivitiesLocal() {
+    const principal = [];
+    const lateral = [];
+    const workshop = [];
+    activities.forEach((a) => {
+      if (a.local === 'Auditório Principal') {
+        principal.push(a);
+      }
+
+      if (a.local === 'Auditório Lateral') {
+        lateral.push(a);
+      }
+
+      if (a.local === 'Sala de Workshop') {
+        workshop.push(a);
+      }
+    });
+    setLocalPrincipal(principal);
+    setLocalLateral(lateral);
+    setWorkshopLocal(workshop);
+  }
+
+  function getUsersActivities() {
+    const promise = api.get(`/activities/user/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    promise
+      .then((res) => {
+        const data = res.data;
+        const ids = [];
+        data.forEach((r) => ids.push(r.id));
+        setUserActivities(ids);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+
   return (
     <>
       <LocalsContainer>
@@ -9,19 +59,49 @@ export default function ActivitiesList() {
           <LocalName>Auditório Principal</LocalName>
           <LocalOptions>
             <ScrooledDiv>
-              <ActivitieOption />
-              <ActivitieOption />
-              <ActivitieOption />
+              {localPrincipal.map((a) => (
+                <ActivitieOption
+                  data={a}
+                  userActivities={userActivities}
+                  userId={userId}
+                  token={token}
+                  setUserActivities={setUserActivities}
+                />
+              ))}
             </ScrooledDiv>
           </LocalOptions>
         </Local>
         <Local>
           <LocalName>Auditório Lateral</LocalName>
-          <LocalOptions></LocalOptions>
+          <LocalOptions>
+            <ScrooledDiv>
+              {localLateral.map((a) => (
+                <ActivitieOption
+                  data={a}
+                  userActivities={userActivities}
+                  userId={userId}
+                  token={token}
+                  setUserActivities={setUserActivities}
+                />
+              ))}
+            </ScrooledDiv>
+          </LocalOptions>
         </Local>
         <Local>
           <LocalName>Sala de Workshop</LocalName>
-          <LocalOptions></LocalOptions>
+          <LocalOptions>
+            <ScrooledDiv>
+              {workshopLocal.map((a) => (
+                <ActivitieOption
+                  data={a}
+                  userActivities={userActivities}
+                  setUserActivities={setUserActivities}
+                  userId={userId}
+                  token={token}
+                />
+              ))}
+            </ScrooledDiv>
+          </LocalOptions>
         </Local>
       </LocalsContainer>
     </>
@@ -30,7 +110,7 @@ export default function ActivitiesList() {
 
 const LocalsContainer = styled.div`
   width: 100%;
-  height: 55vh;
+  height: 54vh;
   margin-top: 40px;
   display: flex;
 `;

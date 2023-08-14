@@ -3,14 +3,14 @@ import styled from 'styled-components';
 import ActivitiesList from '../../../components/Activities/ActivitiesList.js';
 import { useContext, useEffect, useState } from 'react';
 import UserContext from '../../../contexts/UserContext.js';
-import { getTicketInformation } from '../../../services/ticketApi.js';
 import api from '../../../services/api.js';
+import DaysButton from '../../../components/Activities/DaysButton.js';
 export default function Activities() {
   const { userData } = useContext(UserContext);
-  const [ticketIsPaid, setTicketIsPaid] = useState(false);
+  const [reload, setReload] = useState(undefined);
   const [ticket, setTicket] = useState(undefined);
   const [event, setEvent] = useState(undefined);
-  const [days, setDays] = useState([]);
+  const [activities, setActivities] = useState(undefined);
   useEffect(() => {
     loadTicket();
     loadDays();
@@ -32,8 +32,10 @@ export default function Activities() {
   }
 
   async function loadDays() {
-    const event = await api.get('/event');
-    console.log(event, 'evento');
+    try {
+      const event = await api.get('/event');
+      setEvent(event.data);
+    } catch (err) {}
   }
 
   if (!ticket) {
@@ -60,15 +62,23 @@ export default function Activities() {
           </p>
         ) : (
           <>
-            <StyledTypography variant="h6" color="textSecondary">
+            <StyledTypography variant="h6!reload)" color="textSecondary">
               Primeiro, filtre pelo dia do evento:
             </StyledTypography>
-            <DaysButton>
-              <button>Sexta, 27/08</button>
-              <button>Sexta, 27/08</button>
-              <button>Sexta, 27/08</button>
-            </DaysButton>
-            <ActivitiesList />
+            {event ? <DaysButton event={event} token={userData.token} setActivities={setActivities} /> : <></>}
+            {activities && activities.length === 0 ? (
+              <p>Não há atividades para esse dia</p>
+            ) : activities ? (
+              <ActivitiesList
+                activities={activities}
+                userId={userData.user.id}
+                token={userData.token}
+                setReload={setReload}
+                reload={reload}
+              />
+            ) : (
+              <></>
+            )}
           </>
         )}
       </ActPageContainer>
@@ -97,23 +107,5 @@ const ActPageContainer = styled.div`
     color: #8e8e8e;
     margin-top: 30px;
     margin-bottom: 20px;
-  }
-`;
-
-const DaysButton = styled.div`
-  display: flex;
-  width: 100%;
-  height: 38px;
-  gap: 10px;
-  button {
-    font-family: 'Roboto', sans-serif;
-    width: 15%;
-    border: none;
-    background-color: #e0e0e0;
-    border-radius: 5px;
-    box-shadow: 1px 1px 10px -2px #6e6e6e;
-    :hover {
-      cursor: pointer;
-    }
   }
 `;
